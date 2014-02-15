@@ -1,3 +1,4 @@
 --color
 -I .
 --default-path .
+--format doc
