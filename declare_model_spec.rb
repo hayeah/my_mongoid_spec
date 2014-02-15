@@ -4,12 +4,6 @@ class Event
   include MyMongoid::Document
 end
 
-describe "MyMongoid Version:" do
-  it "is a string" do
-    expect(MyMongoid::VERSION).to be_a(String)
-  end
-end
-
 describe "Document modules:" do
   it "creates MyMongoid::Document" do
     expect(MyMongoid::Document).to be_a(Module)
