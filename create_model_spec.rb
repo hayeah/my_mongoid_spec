@@ -33,3 +33,40 @@ describe "Create a model:" do
     end
   end
 end
+
+describe "Instantiate a model:" do
+  let(:attributes) {
+    {"id" => "123", "public" => true}
+  }
+
+  let(:event) {
+    Event.new(attributes)
+  }
+
+  it "can instantiate a model with attributes" do
+    expect(event).to be_an(Event)
+  end
+
+  it "throws an error if attributes it not a Hash" do
+    expect {
+      Event.new(100)
+    }.to raise_error(ArgumentError)
+  end
+
+  it "can read the attributes of model" do
+    expect(event.attributes).to eq(attributes)
+  end
+
+  it "can get an attribute with #read_attribute" do
+    expect(event.read_attribute("id")).to eq("123")
+  end
+
+  it "can set an attribute with #write_attribute" do
+    event.write_attribute("id","234")
+    expect(event.read_attribute("id")).to eq("234")
+  end
+
+  it "is a new record initially" do
+    expect(event).to be_new_record
+  end
+end
