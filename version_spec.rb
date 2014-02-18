@@ -1,4 +1,4 @@
-require "spec_helper"
+require File.expand_path('../spec_helper', __FILE__)
 
 describe "MyMongoid Version:" do
   it "is a string" do
