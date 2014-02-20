@@ -1,5 +1,11 @@
 require "spec_helper"
 
+class Event
+  include MyMongoid::Document
+  field :a
+  field :b
+end
+
 describe "Should be able to configure MyMongoid:" do
   describe "MyMongoid::Configuration" do
     let(:config) {
@@ -71,6 +77,110 @@ describe "Should be able to get database session:" do
       expect {
         MyMongoid.session
       }.to raise_error(MyMongoid::UnconfiguredDatabaseError)
+    end
+  end
+end
+
+describe "Should be able to create a record:" do
+  before(:all) {
+    MyMongoid.configure do |config|
+      config.host = "127.0.0.1:27017"
+      config.database = "my_mongoid_test"
+    end
+  }
+
+  before do
+    Event.collection.drop
+  end
+
+  describe "model collection:" do
+    describe "Model.collection_name" do
+      it "should use active support's titleize method" do
+        expect(Event.collection_name).to eq("events")
+      end
+    end
+
+    describe "Model.collection" do
+      it "should return a model's collection" do
+        expect(Event.collection).to be_a(Moped::Collection)
+        expect(Event.collection.name).to eq("events")
+      end
+    end
+  end
+
+
+  describe "#to_document" do
+
+    let(:event) {
+      Event.new({"a" => 10, "b" => 20})
+    }
+
+    it "should be a bson document" do
+      expect(event.to_document).to eq(event.attributes)
+      expect(event.to_document.to_bson).to be_a(String)
+    end
+  end
+
+  describe "Model#save" do
+    let(:attrs) {
+      {"id" => "1", "a" => 10, "b" => 20}
+    }
+
+    let(:event) {
+      Event.new(attrs)
+    }
+
+    context "successful insert:" do
+      before do
+        @result = event.save
+      end
+
+      it "should insert a new record into the db" do
+        expect(Event.collection.find().count).to eq(1)
+      end
+
+      it "should return true" do
+        expect(@result).to eq(true)
+      end
+
+      it "should make Model#new_record return false" do
+        expect(event).to_not be_new_record
+      end
+    end
+  end
+
+  describe "Model.create" do
+    let(:attrs) {
+      {"_id" => "1", "a" => 10, "b" => 20}
+    }
+
+    def create_event
+      Event.create(attrs)
+    end
+
+    before do
+      @event = create_event
+    end
+
+    it "should return a saved record" do
+      expect(@event).to be_an(Event)
+      expect(@event).to_not be_new_record
+      expect(@event.attributes).to eq(attrs)
+    end
+  end
+
+  context "saving a record with no id" do
+    let(:event) {
+      Event.new({"a" => 10})
+    }
+
+    before do
+      event.save
+    end
+
+    it "should generate a random id" do
+      expect(event.id).to be_a(BSON::ObjectId)
+      expect(Event.collection.find({"_id" => event.id}).count).to eq(1)
     end
   end
 end
