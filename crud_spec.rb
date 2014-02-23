@@ -255,6 +255,12 @@ describe "Should be able to find a record:" do
       expect(event.attributes).to eq(attrs)
     end
 
+    it "should be able to find a record by issuing shorthand id query" do
+      event = Event.find("1")
+      expect(event).to be_a(Event)
+      expect(event.attributes).to eq(attrs)
+    end
+
     it "should raise Mongoid::RecordNotFoundError if nothing is found for an id" do
       expect {
         Event.find("_id" => "unknown")
