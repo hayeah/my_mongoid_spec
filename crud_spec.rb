@@ -1,5 +1,16 @@
 require "spec_helper"
 
+def config_db
+  MyMongoid.configure do |config|
+    config.host = "127.0.0.1:27017"
+    config.database = "my_mongoid_test"
+  end
+end
+
+def clean_db
+  Event.collection.drop
+end
+
 class Event
   include MyMongoid::Document
   field :a
@@ -49,10 +60,7 @@ end
 
 describe "Should be able to get database session:" do
   before(:all) {
-    MyMongoid.configure do |config|
-      config.host = "127.0.0.1:27017"
-      config.database = "my_mongoid_test"
-    end
+    config_db
   }
 
   before(:each) {
@@ -82,16 +90,8 @@ describe "Should be able to get database session:" do
 end
 
 describe "Should be able to create a record:" do
-  before(:all) {
-    MyMongoid.configure do |config|
-      config.host = "127.0.0.1:27017"
-      config.database = "my_mongoid_test"
-    end
-  }
-
-  before do
-    Event.collection.drop
-  end
+  before(:all) { config_db }
+  before { clean_db }
 
   describe "model collection:" do
     describe "Model.collection_name" do
@@ -182,5 +182,84 @@ describe "Should be able to create a record:" do
       expect(event.id).to be_a(BSON::ObjectId)
       expect(Event.collection.find({"_id" => event.id}).count).to eq(1)
     end
+  end
+end
+
+describe "Should be able to find a record:" do
+
+
+  # let(:attrs) {
+  #   {"_id" => "1", "a" => 10, "b" => 20}
+  # }
+
+  # before do
+  #   Event.collection.drop
+  #   Event.create(attrs)
+  # end
+
+  # let(:event) {
+  #   event = Event.find({"_id" => "1"})
+  # }
+
+  describe "Model.instantiate" do
+    let(:model) {
+      Class.new do
+        include MyMongoid::Document
+        field :a
+        field :b
+
+        def a=(val)
+          raise "should not use attribute setter"
+        end
+      end
+    }
+
+    let(:attrs) {
+      {"_id" => "1", "a" => 10, "b" => 20}
+    }
+
+    let(:event) {
+      model.instantiate(attrs)
+    }
+
+    it "should return a model instance" do
+      expect(event).to be_an(model)
+    end
+
+    it "should return an instance that's not a new_record" do
+      expect(event).to_not be_new_record
+    end
+
+    it "should have the given attributes" do
+      expect(event.attributes).to eq(attrs)
+    end
+  end
+
+  describe "Model.find" do
+    let(:attrs) {
+      {"_id" => "1", "a" => 10, "b" => 20}
+    }
+
+    before(:all) {
+      config_db
+    }
+
+    before {
+      clean_db
+      Event.create(attrs)
+    }
+
+    it "should be able to find a record by issuing query" do
+      event = Event.find("_id" => "1")
+      expect(event).to be_a(Event)
+      expect(event.attributes).to eq(attrs)
+    end
+
+    it "should raise Mongoid::RecordNotFoundError if nothing is found for an id" do
+      expect {
+        Event.find("_id" => "unknown")
+      }.to raise_error(MyMongoid::RecordNotFoundError)
+    end
+
   end
 end
