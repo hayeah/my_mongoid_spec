@@ -186,21 +186,6 @@ describe "Should be able to create a record:" do
 end
 
 describe "Should be able to find a record:" do
-
-
-  # let(:attrs) {
-  #   {"_id" => "1", "a" => 10, "b" => 20}
-  # }
-
-  # before do
-  #   Event.collection.drop
-  #   Event.create(attrs)
-  # end
-
-  # let(:event) {
-  #   event = Event.find({"_id" => "1"})
-  # }
-
   describe "Model.instantiate" do
     let(:model) {
       Class.new do
@@ -268,4 +253,160 @@ describe "Should be able to find a record:" do
     end
 
   end
+end
+
+describe "Should track changes made to a record" do
+  let(:event) {
+    Event.instantiate({"a" => 1, "b" => 2})
+  }
+
+  describe "#changed_attributes" do
+
+
+    it "should be an empty hash for an newly instantiated record (from Model.instantiate)" do
+      expect(event.changed_attributes).to eq({})
+    end
+
+    it "should track writes to attributes" do
+      event.a = 10
+      event.write_attribute("b",20)
+      expect(event.changed_attributes.keys).to include("a","b")
+    end
+
+    it "should keep the original attribute values" do
+      event.a = 10
+      expect(event.changed_attributes["a"]).to eq(1)
+      event.write_attribute("b",20)
+      expect(event.changed_attributes["b"]).to eq(2)
+    end
+
+    it "should not make a field dirty if the assigned value is equaled to the old value" do
+      event.a = 1
+      expect(event.changed_attributes).to be_empty
+    end
+  end
+
+  describe "#changed?" do
+    it "should be false for a newly instantiated record" do
+      expect(event).to_not be_changed
+    end
+
+    it "should be true if a field changed" do
+      event.a = 20
+      expect(event).to be_changed
+    end
+  end
+end
+
+describe "Should be able to update a record:" do
+
+  before {
+    config_db
+    clean_db
+  }
+
+  describe "#atomic_updates" do
+    let(:event) {
+      Event.instantiate({"a" => 1, "b" => 2})
+    }
+
+    it "should return {} if nothing changed" do
+      expect(event.atomic_updates).to be_empty
+    end
+
+    it "should return {} if record is not a persisted document" do
+      event = Event.new({"a" => 1})
+      expect(event.atomic_updates).to be_empty
+    end
+
+    it "should generate the $set update operation to update a persisted document" do
+      event.a = 10
+      event.b = 20
+      set = event.atomic_updates["$set"]
+      expect(set).to be_an(Hash)
+      expect(set).to eq({"a" => 10, "b" => 20})
+    end
+  end
+
+  describe "updating database:" do
+    let(:attrs) {
+      {"_id" => "1", "a" => 1, "b" => 2}
+    }
+
+    let(:event) {
+      Event.create(attrs)
+    }
+
+    let(:event2) {
+      Event.find("1")
+    }
+
+    describe "#save" do
+      it "should have no changes right after persisting" do
+        expect(event).to_not be_changed
+      end
+    end
+
+    describe "#update_document" do
+      it "should not issue query if nothing changed" do
+        expect_any_instance_of(Moped::Query).to_not receive(:update)
+        event.update_document
+        expect(event2.attributes).to eq(attrs)
+      end
+
+      it "should update the document in database if there are changes" do
+        event.a = 10
+        event.update_document
+        expect(event2.a).to eq(10)
+      end
+    end
+
+    describe "#save" do
+      it "should save the changes if a document is already persisted" do
+        event.a = 10
+        event.save
+        expect(event2.a).to eq(10)
+      end
+    end
+
+    describe "#update_attributes" do
+      it "should change and persiste attributes of a record" do
+        event.update_attributes "a" => 10, "b" => 20
+        expect(event2.a).to eq(10)
+        expect(event2.b).to eq(20)
+      end
+    end
+  end
+end
+
+describe "Should be able to delete a record:" do
+  let(:attrs) {
+    {"_id" => "1", "a" => 1, "b" => 2}
+  }
+
+  let(:event) {
+    Event.find("1")
+  }
+
+  before {
+    config_db
+    clean_db
+    Event.create(attrs)
+  }
+
+  describe "#delete" do
+    before {
+      event.delete
+    }
+    it "should delete a record from db" do
+      expect {
+        Event.find("1")
+      }.to raise_error(MyMongoid::RecordNotFoundError)
+    end
+
+    it "should return true for deleted?" do
+      expect(event).to be_deleted
+    end
+  end
+
 end
