@@ -65,7 +65,7 @@ describe "Should be able to get database session:" do
 
   before(:each) {
     # remove memoized session before each test
-    MyMongoid.remove_instance_variable(:@session) if MyMongoid.instance_variable_defined?(:@session)
+    MyMongoid.send(:remove_instance_variable, :@session) if MyMongoid.instance_variable_defined?(:@session)
   }
 
   describe "MyMongoid.session" do
@@ -192,10 +192,6 @@ describe "Should be able to find a record:" do
         include MyMongoid::Document
         field :a
         field :b
-
-        def a=(val)
-          raise "should not use attribute setter"
-        end
       end
     }
 
