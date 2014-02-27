@@ -1,22 +1,30 @@
 require "spec_helper"
 
-class Event
-  include MyMongoid::Document
-  field :public
-  field :created_at
-end
+#class Event
+#  include MyMongoid::Document
+#  field :public
+#  field :created_at
+#end
 
 describe "Declare fields:" do
+  let(:event_class) {
+    Class.new do
+      include MyMongoid::Document
+      field :public
+      field :created_at
+    end
+  }
+
   let(:attrs) {
     {"public" => true, "created_at" => Time.parse("2014-02-13T03:20:37Z")}
   }
 
   let(:event) {
-    Event.new(attrs)
+    event_class.new(attrs)
   }
 
   it "can declare a field using the 'field' DSL" do
-    expect(Event).to be_a(Class)
+    expect(event_class).to be_a(Class)
   end
 
   it "declares getter for a field" do
@@ -33,7 +41,7 @@ describe "Declare fields:" do
 
   context ".fields" do
     let(:fields) {
-      Event.fields
+      event_class.fields
     }
     it "maintains a map fields objects" do
       expect(fields).to be_a(Hash)
@@ -49,14 +57,14 @@ describe "Declare fields:" do
 
   it "raises MyMongoid::DuplicateFieldError if field is declared twice" do
     expect {
-      Event.module_eval do
+      event_class.module_eval do
         field :public
       end
     }.to raise_error(MyMongoid::DuplicateFieldError)
   end
 
   it "automatically declares the '_id' field"  do
-    expect(Event.fields.keys).to include("_id")
+    expect(event_class.fields.keys).to include("_id")
   end
 end
 
