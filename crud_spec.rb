@@ -192,6 +192,10 @@ describe "Should be able to find a record:" do
         include MyMongoid::Document
         field :a
         field :b
+
+        def a=(val)
+          raise "should not use attribute setter"
+        end
       end
     }
 
