@@ -77,7 +77,7 @@ describe ATM do
       end
 
       it "should cancel after callbacks" do
-        expect(atm).to_not receive(:send_sms)
+        expect(account).to_not receive(:send_sms)
       end
     end
   end
