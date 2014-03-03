@@ -193,7 +193,7 @@ describe "Should be able to find a record:" do
         field :a
         field :b
 
-        def a=(val)
+        def a=(value)
           raise "should not use attribute setter"
         end
       end
