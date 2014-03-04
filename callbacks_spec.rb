@@ -91,8 +91,8 @@ describe MyMongoid::MyCallbacks do
       }
 
       it "should call the callbacks in order, then call the block" do
-        expect(cb2).to receive(:invoke).with(target).ordered
         expect(cb1).to receive(:invoke).with(target).ordered
+        expect(cb2).to receive(:invoke).with(target).ordered
         expect(target).to receive(:main_method)
       end
     end
