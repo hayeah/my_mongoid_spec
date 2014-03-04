@@ -21,6 +21,10 @@ describe "Should define lifecycle callbacks" do
     Class.new {
       include MyMongoid::Document
 
+      def self.name
+        self.to_s
+      end
+
       def self.to_s
         "Event"
       end
