@@ -200,26 +200,9 @@ describe MyMongoid::MyCallbacks do
   describe "run_callbacks should use the compiled lambda to run callbacks" do
     let(:klass) {
       Class.new(base) do
-        set_callback :save, :after, :after_1
-        set_callback :save, :around, :around_1
         set_callback :save, :before, :before_1
 
-        def around_1
-          around_top
-          yield
-          around_bottom
-        end
-
         def before_1
-        end
-
-        def after_1
-        end
-
-        def around_top
-        end
-
-        def around_bottom
         end
       end
     }
@@ -239,12 +222,7 @@ describe MyMongoid::MyCallbacks do
 
     it "should run callback methods" do
       expect(target).to receive(:before_1).and_call_original.ordered
-      expect(target).to receive(:around_1).and_call_original.ordered
-      expect(target).to receive(:around_top).ordered
       expect(target).to receive(:_save).ordered
-      expect(target).to receive(:around_bottom).ordered
-      expect(target).to receive(:after_1).and_call_original.ordered
-
       target.save
     end
   end
